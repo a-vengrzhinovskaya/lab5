@@ -4,131 +4,97 @@ using System.Text.RegularExpressions;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace lab5 {
-
     [Serializable]
     public class Corrector {
-
         private Dictionary<string, List<string>> Dictionary { get; set; } = new Dictionary<string, List<string>>();
 
-        private List<string> AddMisspelled(List<string> misspelled) {
-
+        private List<string> AddMisspelled(List<string> Misspelled) {
             string Word;
-
             Console.WriteLine("Add variations. Enter 0 to stop.");
 
             while (true) {
-
                 Word = Console.ReadLine();
 
                 if (Word == "0") {
-
                     break;
                 }
 
-                misspelled.Add(Word);
+                Misspelled.Add(Word);
             }
-
-            return misspelled;
+            return Misspelled;
         }
 
         private void AddWord() {
-
             Console.WriteLine("Enter a word: ");
             var NewWord = Console.ReadLine();
 
             if (Dictionary.ContainsKey(NewWord)) {
-
                 throw new Exception("Word already added.");
             }
 
             var Misspelled = new List<string>();
-
             Dictionary.Add(NewWord, Misspelled);
-
             Dictionary[NewWord] = AddMisspelled(Dictionary[NewWord]);
 
             Console.WriteLine("New word added.");
         }
 
-        private string Correction(string currentWord) {
+        private string Correction(string CurrentWord) {
+            foreach (var Word in Dictionary) {
+                foreach (var version in Word.Value) {
 
-            foreach (var word in Dictionary) {
-
-                foreach (var version in word.Value) {
-
-                    if (currentWord == version) {
-
-                        currentWord = word.Key;
-
-                        return currentWord;
+                    if (CurrentWord == version) {
+                        CurrentWord = Word.Key;
+                        return CurrentWord;
                     }
                 }
             }
-
-            return currentWord;
+            return CurrentWord;
         }
 
-        private string EditWordsLine(string line) {
-
-            var Words = line.Split();
+        private string EditWordsLine(string Line) {
+            var Words = Line.Split();
             var EditedLine = "";
-
-            foreach (var word in Words) {
-
-                EditedLine += $"{Correction(word)} ";
-
+            foreach (var Word in Words) {
+                EditedLine += $"{Correction(Word)} ";
             }
-
             EditedLine = $"{EditedLine}\n";
-
             return EditedLine;
         }
 
-         private string EditNumbersLine(string line) {
-
+         private string EditNumbersLine(string Line) {
             string Number;
             var RegexFind = new Regex(@"([(]\d{3}[)]\s{1}\d{3})-(\d{2})-(\d{2})");
             var ReplaceDash = new Regex(@"-");
             var ReplaceBracket1 = new Regex(@"[(]");
             var ReplaceBracket2 = new Regex(@"[)]");
 
-            var Matches = RegexFind.Matches(line);
+            var Matches = RegexFind.Matches(Line);
             if (Matches.Count > 0) {
-
-                foreach (Match match in Matches) {
-
-                    Number = match.Value;
+                foreach (Match Match in Matches) {
+                    Number = Match.Value;
                     Number = ReplaceDash.Replace(Number, " ");
                     Number = ReplaceBracket1.Replace(Number, "");
                     Number = ReplaceBracket2.Replace(Number, "");
                     Number = $"+380 {Number.Substring(1)}";
 
-                    line = line.Replace(match.Value, Number);
+                    Line = Line.Replace(Match.Value, Number);
                 }
             }
-            
-            var EditedLine = $"{line}\n";
-
+            var EditedLine = $"{Line}\n";
             return EditedLine;
         }
 
-        private void EditWords(string fileName) {
-
+        private void EditWords(string FileName) {
             var EditedText = "";
-
-            using (var TextFile = new StreamReader(fileName)) {
-
+            using (var TextFile = new StreamReader(FileName)) {
                 string OriginalText = "";
-
                 while (!TextFile.EndOfStream) {
-
                     OriginalText = TextFile.ReadLine();
-
                     EditedText += EditWordsLine(OriginalText);
                 }
             }
-            using (var TextFile = new StreamWriter(fileName)) {
-
+            using (var TextFile = new StreamWriter(FileName)) {
                 TextFile.WriteLine(EditedText);
                 TextFile.Flush();
             }
@@ -136,23 +102,16 @@ namespace lab5 {
             Console.ReadKey();
         }
 
-        private void EditNumbers(string fileName) {
-
+        private void EditNumbers(string FileName) {
             var EditedText = "";
-
-            using (var TextFile = new StreamReader(fileName)) {
-
+            using (var TextFile = new StreamReader(FileName)) {
                 string OriginalText = "";
-
                 while (!TextFile.EndOfStream) {
-
                     OriginalText = TextFile.ReadLine();
-
                     EditedText += EditNumbersLine(OriginalText);
                 }
             }
-            using (var TextFile = new StreamWriter(fileName)) {
-
+            using (var TextFile = new StreamWriter(FileName)) {
                 TextFile.WriteLine(EditedText);
                 TextFile.Flush();
             }
@@ -160,30 +119,24 @@ namespace lab5 {
             Console.ReadKey();
         }
 
-        private void Serialize(FileStream file) {
-
+        private void Serialize(FileStream File) {
             var formatter = new BinaryFormatter();
-            formatter.Serialize(file, this);
-            file.Close();
+            formatter.Serialize(File, this);
+            File.Close();
         }
 
-        private void Deserialize(FileStream file) {
-
+        private void Deserialize(FileStream File) {
             var formatter = new BinaryFormatter();
-            var deserialized = (Corrector)formatter.Deserialize(file);
+            var deserialized = (Corrector)formatter.Deserialize(File);
             Dictionary = deserialized.Dictionary;
-            file.Close();
+            File.Close();
         }
 
         public void Program() {
-
             string Directory, Name;
-
             while (true) {
-
                 Console.WriteLine("Enter directory:");
                 Directory = Console.ReadLine();
-
                 Console.WriteLine("Enter file name:");
                 Name = Console.ReadLine();
                 Name = Directory + "/" + Name;
@@ -198,13 +151,11 @@ namespace lab5 {
 
             var FileS = new FileStream($"{Directory}/dictionary.bin", FileMode.OpenOrCreate, FileAccess.Read);
             if (FileS.Length != 0) {
-
                 Deserialize(FileS);
             }
             FileS.Close();
 
             while (true) {
-
                 Console.Clear();
                 Console.WriteLine("Add new word to dictionary     0");
                 Console.WriteLine("Edit text                      1");
@@ -212,15 +163,13 @@ namespace lab5 {
                 Console.WriteLine("Exit                           3");
 
                 switch (Console.ReadLine()) {
-
                     case "0":
                         Console.Clear();
-
                         try {
                             AddWord();
                         }
-                        catch (Exception exception) {
-                            Console.WriteLine(exception.Message);
+                        catch (Exception Exception) {
+                            Console.WriteLine(Exception.Message);
                             Console.ReadKey();
                             break;
                         }
